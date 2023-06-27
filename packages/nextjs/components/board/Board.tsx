@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DropResult } from "react-beautiful-dnd";
 import dynamic from 'next/dynamic';
 
 const DragDropContext = dynamic(
@@ -23,70 +24,136 @@ const Draggable = dynamic(
   {ssr: false},
 );
 
+const getItems = (count, offset = 0) =>
+  Array.from({ length: count }, (v, k) => k).map(k => ({
+    id: `item-${k + offset}-${new Date().getTime()}`,
+    content: `item ${k + offset}`
+  }));
+
+const reorder = (list, startIndex, endIndex) => {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+
+  return result;
+};
+
+const move = (source, destination, droppableSource, droppableDestination) => {
+  const sourceClone = Array.from(source);
+  const destClone = Array.from(destination);
+  const [removed] = sourceClone.splice(droppableSource.index, 1);
+
+  destClone.splice(droppableDestination.index, 0, removed);
+
+  const result = {};
+  result[droppableSource.droppableId] = sourceClone;
+  result[droppableDestination.droppableId] = destClone;
+
+  return result;
+};
+
+const grid = 8;
+
+const getItemStyle = (isDragging, draggableStyle) => ({
+  userSelect: "none",
+  padding: grid * 2,
+  margin: `0 0 ${grid}px 0`,
+  background: isDragging ? "lightgreen" : "grey",
+
+  ...draggableStyle
+});
+
+const getListStyle = isDraggingOver => ({
+  background: isDraggingOver ? "lightblue" : "lightgrey",
+  padding: grid,
+  width: 250
+});
+
 export const BoardMain = () => {
-  const boardData = [
-    {
-      id: '1',
-      name: 'Ground 1',
-    },
-    {
-      id: '2',
-      name: 'Ground 2',
-    },
-    {
-      id: '3',
-      name: 'Ground 3',
-    },
-    {
-      id: '4',
-      name: 'Ground 4',
-    },
-    {
-      id: '5',
-      name: 'Ground 5',
-    },
-    {
-      id: '6',
-      name: 'Ground 6',
+  const [state, setState] = useState([getItems(5), getItems(5, 5), getItems(5, 10)]);
+
+  function onDragEnd(result) {
+    const { source, destination } = result;
+
+    if (!destination) {
+      return;
     }
-  ]
-  const [map, setMap] = useState(boardData);
+    
+    const sInd = +source.droppableId;
+    const dInd = +destination.droppableId;
 
-  function handleOnDragEnd(result: any) {
-    if (!result.destination) return;
+    if (sInd === dInd) {
+      const items = reorder(state[sInd], source.index, destination.index);
+      const newState = [...state];
+      newState[sInd] = items;
+      setState(newState);
+    } else {
+      const result = move(state[sInd], state[dInd], source, destination);
+      const newState = [...state];
+      newState[sInd] = result[sInd];
+      newState[dInd] = result[dInd];
 
-    const items = Array.from(map);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setMap(items);
+      setState(newState.filter(group => group.length));
+    }
   }
 
   return (
-    <div style={{ width: '500px'}}>
+    <div>
       <h1 className="mt-4 text-4xl">House</h1>
-      <DragDropContext onDragEnd={handleOnDragEnd}>
-        <Droppable droppableId="ground">
-          {(provided) => (
-            <ul className="bg-yellow-500" {...provided.droppableProps} ref={provided.innerRef}>
-              {map.map(({id, name}, index) => {
-                return (
-                  <Draggable key={id} draggableId={id} index={index}>
-                    {(provided) => (
-                      <li ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                        <p className="bg-green-500 px-4 py-2">
-                          { name }
-                        </p>
-                      </li>
-                    )}
-                  </Draggable>
-                );
-              })}
-              {provided.placeholder}
-            </ul>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <div className="flex">
+        <DragDropContext onDragEnd={onDragEnd}>
+          {state.map((el, ind) => (
+            <Droppable key={ind} droppableId={`${ind}`}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  style={getListStyle(snapshot.isDraggingOver)}
+                  {...provided.droppableProps}
+                >
+                  {el.map((item, index) => (
+                    <Draggable
+                      key={item.id}
+                      draggableId={item.id}
+                      index={index}
+                    >
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={getItemStyle(
+                            snapshot.isDragging,
+                            provided.draggableProps.style
+                          )}
+                        >
+                          <div
+                            className="flex justify-around"
+                          >
+                            {item.content}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newState = [...state];
+                                newState[ind].splice(index, 1);
+                                setState(
+                                  newState.filter(group => group.length)
+                                );
+                              }}
+                            >
+                              X
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          ))}
+        </DragDropContext>
+      </div>
     </div>
   );
-};
+}
