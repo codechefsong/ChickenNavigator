@@ -27,7 +27,7 @@ const Draggable = dynamic(
 const getItems = (count, offset = 0) =>
   Array.from({ length: count }, (v, k) => k).map(k => ({
     id: `item-${k + offset}-${new Date().getTime()}`,
-    content: `item ${k + offset}`
+    content: `${k + offset}`
   }));
 
 const reorder = (list, startIndex, endIndex) => {
@@ -66,11 +66,11 @@ const getItemStyle = (isDragging, draggableStyle) => ({
 const getListStyle = isDraggingOver => ({
   background: isDraggingOver ? "lightblue" : "lightgrey",
   padding: grid,
-  width: 250
+  width: 100
 });
 
 export const BoardMain = () => {
-  const [state, setState] = useState([getItems(5), getItems(5, 5), getItems(5, 10)]);
+  const [state, setState] = useState([getItems(5), getItems(5, 5), getItems(5, 10), getItems(5, 15), getItems(5, 20)]);
 
   function onDragEnd(result) {
     const { source, destination } = result;
@@ -130,18 +130,6 @@ export const BoardMain = () => {
                             className="flex justify-around"
                           >
                             {item.content}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newState = [...state];
-                                newState[ind].splice(index, 1);
-                                setState(
-                                  newState.filter(group => group.length)
-                                );
-                              }}
-                            >
-                              X
-                            </button>
                           </div>
                         </div>
                       )}
