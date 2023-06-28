@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { DropResult } from "react-beautiful-dnd";
 import dynamic from 'next/dynamic';
 
 const DragDropContext = dynamic(
@@ -30,28 +29,6 @@ const getItems = (count, offset = 0) =>
     content: `${k + offset}`
   }));
 
-const reorder = (list, startIndex, endIndex) => {
-  const result = Array.from(list);
-  const [removed] = result.splice(startIndex, 1);
-  result.splice(endIndex, 0, removed);
-
-  return result;
-};
-
-const move = (source, destination, droppableSource, droppableDestination) => {
-  const sourceClone = Array.from(source);
-  const destClone = Array.from(destination);
-  const [removed] = sourceClone.splice(droppableSource.index, 1);
-
-  destClone.splice(droppableDestination.index, 0, removed);
-
-  const result = {};
-  result[droppableSource.droppableId] = sourceClone;
-  result[droppableDestination.droppableId] = destClone;
-
-  return result;
-};
-
 const grid = 8;
 
 const getItemStyle = (isDragging, draggableStyle) => ({
@@ -74,27 +51,19 @@ export const BoardMain = () => {
 
   function onDragEnd(result) {
     const { source, destination } = result;
+    console.log(source, destination)
 
     if (!destination) {
       return;
     }
-    
-    const sInd = +source.droppableId;
-    const dInd = +destination.droppableId;
 
-    if (sInd === dInd) {
-      const items = reorder(state[sInd], source.index, destination.index);
-      const newState = [...state];
-      newState[sInd] = items;
-      setState(newState);
-    } else {
-      const result = move(state[sInd], state[dInd], source, destination);
-      const newState = [...state];
-      newState[sInd] = result[sInd];
-      newState[dInd] = result[dInd];
-
-      setState(newState.filter(group => group.length));
-    }
+    let newState = [...state];
+    const data1 = state[destination.droppableId][destination.index].content;
+    const data2 = state[source.droppableId][source.index].content;
+    console.log(data1, data2)
+    newState[source.droppableId][source.index].content = data1;
+    newState[destination.droppableId][destination.index].content = data2;
+    setState(newState);
   }
 
   return (
