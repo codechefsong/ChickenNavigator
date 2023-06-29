@@ -1,6 +1,9 @@
 import { useState } from "react";
 import dynamic from 'next/dynamic';
 
+import { useScaffoldEventSubscriber, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
+import { notification } from "~~/utils/scaffold-eth";
+
 const DragDropContext = dynamic(
   () =>
     import('react-beautiful-dnd').then(mod => {
@@ -47,11 +50,34 @@ const getListStyle = isDraggingOver => ({
 });
 
 export const BoardMain = () => {
-  const [state, setState] = useState([getItems(5), getItems(5, 5), getItems(5, 10), getItems(5, 15), getItems(5, 20)]);
+  const [state, setState] = useState([getItems(5)]);
+  const [userNums, setUserNums] = useState([0,1,2,3,4]);
+
+  useScaffoldEventSubscriber({
+    contractName: "ChickenNavigator",
+    eventName: "matchResult",
+    listener: (player : any, userNums: any, winnerNums: any, isMatch : any) => {
+      console.log(player, userNums, winnerNums, isMatch);
+      for(let i = 0; i < 5; i++){
+        console.log(userNums[i].toString(), winnerNums[i].toString());
+      }
+      notification.info(`Nothing`);
+    },
+  });
+
+  const { writeAsync, isLoading } = useScaffoldContractWrite({
+    contractName: "ChickenNavigator",
+    functionName: "playGame",
+    args: [userNums],
+    value: "0.01",
+    onBlockConfirmation: txnReceipt => {
+      console.log("📦 Transaction blockHash", txnReceipt.blockHash);
+    },
+  });
 
   function onDragEnd(result) {
     const { source, destination } = result;
-    console.log(source, destination)
+    console.log(state)
 
     if (!destination) {
       return;
@@ -64,11 +90,17 @@ export const BoardMain = () => {
     newState[source.droppableId][source.index].content = data1;
     newState[destination.droppableId][destination.index].content = data2;
     setState(newState);
+
+    let nums = [];
+    for(let i = 0; i < 5; i++){
+      nums.push(newState[0][i].content);
+    }
+    setUserNums(nums);
   }
 
   return (
     <div>
-      <h1 className="mt-4 text-4xl">House</h1>
+      <h1 className="mt-4 text-4xl">Eggs</h1>
       <div className="flex">
         <DragDropContext onDragEnd={onDragEnd}>
           {state.map((el, ind) => (
@@ -111,6 +143,9 @@ export const BoardMain = () => {
           ))}
         </DragDropContext>
       </div>
+      <button className='mt-5 py-2 px-4 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> writeAsync()}>
+        Pay and Hatch
+      </button>
     </div>
   );
 }
