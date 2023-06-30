@@ -4,6 +4,12 @@ import dynamic from 'next/dynamic';
 import { useScaffoldEventSubscriber, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
+const EGG = "/assets/egg.png";
+const NEST = "/assets/nest.png";
+const EMPTY = "/assets/empty.png";
+const CHICKEN = "/assets/chicken.png";
+const CHICKENNO = "/assets/chickenNO.png";
+
 const DragDropContext = dynamic(
   () =>
     import('react-beautiful-dnd').then(mod => {
@@ -29,16 +35,17 @@ const Draggable = dynamic(
 const getItems = (count, offset = 0) =>
   Array.from({ length: count }, (v, k) => k).map(k => ({
     id: `item-${k + offset}-${new Date().getTime()}`,
-    content: `${k + offset}`
-  }));
+    content: `${k + offset < 5 ? k + offset : "X"}`,
+    img: `${k + offset < 5 ? EGG : NEST}`
+  }))
 
 const grid = 8;
 
 const getItemStyle = (isDragging, draggableStyle) => ({
   userSelect: "none",
-  padding: grid * 2,
+  padding: grid * 1,
   margin: `0 0 ${grid}px 0`,
-  background: isDragging ? "lightgreen" : "grey",
+  background: isDragging ? "lightgreen" : "green",
 
   ...draggableStyle
 });
@@ -50,7 +57,7 @@ const getListStyle = isDraggingOver => ({
 });
 
 export const BoardMain = () => {
-  const [state, setState] = useState([getItems(5)]);
+  const [state, setState] = useState([getItems(5), getItems(5, 10)]);
   const [userNums, setUserNums] = useState([0,1,2,3,4]);
 
   useScaffoldEventSubscriber({
@@ -58,9 +65,13 @@ export const BoardMain = () => {
     eventName: "matchResult",
     listener: (player : any, userNums: any, winnerNums: any, isMatch : any) => {
       console.log(player, userNums, winnerNums, isMatch);
+      let newState = [...state];
+
       for(let i = 0; i < 5; i++){
         console.log(userNums[i].toString(), winnerNums[i].toString());
+        newState[1][i].img = userNums[i].toString() === winnerNums[i].toString() ? CHICKEN : CHICKENNO;
       }
+      setState(newState);
       notification.info(`Nothing`);
     },
   });
@@ -88,15 +99,19 @@ export const BoardMain = () => {
     const data2 = state[source.droppableId][source.index].content;
     console.log(data1, data2)
     newState[source.droppableId][source.index].content = data1;
+    newState[source.droppableId][source.index].img = EMPTY;
     newState[destination.droppableId][destination.index].content = data2;
+    newState[destination.droppableId][destination.index].img = EGG;
     setState(newState);
 
     let nums = [];
     for(let i = 0; i < 5; i++){
-      nums.push(newState[0][i].content);
+      nums.push(newState[1][i].content);
     }
     setUserNums(nums);
   }
+
+  console.log(state)
 
   return (
     <div>
@@ -130,7 +145,7 @@ export const BoardMain = () => {
                           <div
                             className="flex justify-around"
                           >
-                            {item.content}
+                            <img src={item.img} alt="Thing" />
                           </div>
                         </div>
                       )}
