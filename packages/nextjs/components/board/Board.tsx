@@ -53,6 +53,8 @@ const getItemStyle = (isDragging, draggableStyle) => ({
 const getListStyle = isDraggingOver => ({
   background: isDraggingOver ? "lightblue" : "lightgrey",
   padding: grid,
+  marginRight: 50,
+  marginLeft: 50,
   width: 100
 });
 
@@ -115,11 +117,10 @@ export const BoardMain = () => {
 
   return (
     <div>
-      <h1 className="mt-4 text-4xl">Eggs</h1>
       <div className="flex">
         <DragDropContext onDragEnd={onDragEnd}>
           {state.map((el, ind) => (
-            <Droppable key={ind} droppableId={`${ind}`}>
+            <Droppable key={ind} droppableId={`${ind}`} ignoreContainerClipping>
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
@@ -128,6 +129,7 @@ export const BoardMain = () => {
                 >
                   {el.map((item, index) => (
                     <Draggable
+                      isDragDisabled={item.content === "X"}
                       key={item.id}
                       draggableId={item.id}
                       index={index}
@@ -158,8 +160,8 @@ export const BoardMain = () => {
           ))}
         </DragDropContext>
       </div>
-      <button className='mt-5 py-2 px-4 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> writeAsync()}>
-        Pay and Hatch
+      <button className='mt-5 ml-20 py-2 px-4 bg-green-500 rounded baseline hover:bg-green-300 disabled:opacity-50' onClick={()=> writeAsync()}>
+        Pay 0.01 ETH and Hatch
       </button>
     </div>
   );
