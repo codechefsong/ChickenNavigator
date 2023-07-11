@@ -1,4 +1,4 @@
-# 🏗 Scaffold-ETH 2
+# Chicken Navigator
 Help guide baby chickens to their correct nests
 
 ⚙️ Built using NextJS, RainbowKit, Hardhat, Wagmi, and Typescript.
